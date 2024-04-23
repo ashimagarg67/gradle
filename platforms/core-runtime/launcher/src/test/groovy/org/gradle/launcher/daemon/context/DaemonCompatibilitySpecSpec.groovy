@@ -91,7 +91,7 @@ class DaemonCompatibilitySpecSpec extends Specification {
     }
 
     def "contexts with different jvm criteria are incompatible"() {
-        clientWants(new DaemonJvmCriteria(JavaVersion.VERSION_11, JvmVendorSpec.ADOPTIUM, JvmImplementation.VENDOR_SPECIFIC))
+        clientWants(new DaemonJvmCriteria(JavaVersion.VERSION_11, JvmVendorSpec.ADOPTIUM))
 
         candidate.javaVersion >> JavaVersion.VERSION_15
 
