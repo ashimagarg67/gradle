@@ -237,14 +237,15 @@ class JavaCompileProblemsIntegrationTest extends AbstractIntegrationSpec {
         }
     }
 
-    def "the compiler flag -Werror correctly reports"() {
+    def "the compiler flag -Werror correctly reports problems"() {
         given:
         buildFile << "tasks.compileJava.options.compilerArgs += ['-Werror']"
-        possibleFileLocations.put(writeJavaCausingTwoCompilationWarnings("Foo"), 3)
+
+        def fooFileLocation = writeJavaCausingTwoCompilationWarnings("Foo")
+        possibleFileLocations.put(fooFileLocation, 3)
 
         when:
         fails("compileJava")
-
 
         then:
         // 2 warnings + 1 special error
@@ -254,7 +255,7 @@ class JavaCompileProblemsIntegrationTest extends AbstractIntegrationSpec {
             fqid == 'compilation:java:java-compilation-error'
             details == 'warnings found and -Werror specified'
             solutions.empty
-            additionalData.isEmpty()
+            additionalData["formatted"] == "error: warnings found and -Werror specified"
         }
         // The two expected warnings are still reported as warnings
         verifyAll(receivedProblem(1)) {
@@ -262,14 +263,25 @@ class JavaCompileProblemsIntegrationTest extends AbstractIntegrationSpec {
             fqid == 'compilation:java:java-compilation-warning'
             details == 'redundant cast to java.lang.String'
             solutions.empty
-            additionalData.isEmpty()
+            verifyAll(getSingleLocation(ReceivedProblem.ReceivedFileLocation)) {
+                it.path == fooFileLocation
+            }
+            verifyAll(getSingleLocation(ReceivedProblem.ReceivedLineInFileLocation)) {
+                it.line == 5
+                it.length == 21
+            }
+            additionalData["formatted"] == """${fooFileLocation}:5: warning: [cast] redundant cast to String
+                    String s = (String)"Hello World";
+                               ^"""
         }
         verifyAll(receivedProblem(2)) {
             assertProblem(it, "WARNING", true)
             fqid == 'compilation:java:java-compilation-warning'
             details == 'redundant cast to java.lang.String'
             solutions.empty
-            additionalData.isEmpty()
+            additionalData["formatted"] == """${fooFileLocation}:10: warning: [cast] redundant cast to String
+                    String s = (String)"Hello World";
+                               ^"""
         }
     }
 
